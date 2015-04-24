@@ -153,6 +153,10 @@ public class Psd implements LayersContainer {
     public Layer getLayer(int index) {
         return layers.get(index);
     }
+    
+    public List<Layer> getLayers(){
+    	return layers;
+    }
 
     @Override
     public int indexOfLayer(Layer layer) {

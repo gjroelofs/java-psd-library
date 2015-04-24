@@ -134,6 +134,10 @@ public class Layer implements LayersContainer {
     public Layer getLayer(int index) {
         return layers.get(index);
     }
+    
+    public List<Layer> getLayers(){
+    	return layers;
+    }
 
     @Override
     public int indexOfLayer(Layer layer) {
@@ -176,8 +180,18 @@ public class Layer implements LayersContainer {
     public boolean isVisible() {
         return visible;
     }
+    
+    
 
-    @Override
+    public String getName() {
+		return name;
+	}
+
+	public void setName(String name) {
+		this.name = name;
+	}
+
+	@Override
     public String toString() {
         return name;
     }
