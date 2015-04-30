@@ -18,8 +18,10 @@
 
 package psd.parser.object;
 
+import java.awt.Color;
 import java.io.*;
 import java.util.*;
+
 import psd.parser.PsdInputStream;
 
 public class PsdTextData extends PsdObject {
@@ -28,11 +30,55 @@ public class PsdTextData extends PsdObject {
 	private int cachedByte = -1;
 	private boolean useCachedByte;
 	
+	private ArrayList<FontStyle> styles;
+	
+	public static class FontStyle {
+		
+		public String name;
+		public float size;
+		public Color color;
+		
+	}
+	
 	public PsdTextData(PsdInputStream stream) throws IOException {
 		int size = stream.readInt();
 		int startPos = stream.getPos();
 		properties = readMap(stream);
 		assert startPos + size == stream.getPos();
+		
+		// Parse the fonts
+		ArrayList<String> fonts = new ArrayList<String>();
+		ArrayList<HashMap<String, Object>> fontSet = get(map(properties, "DocumentResources"), "FontSet");
+		
+		for(HashMap<String,Object> entry : fontSet) {
+			fonts.add((String) entry.get("Name"));
+		}
+		
+		// Parse the paragraphs / style sheets
+		styles = new ArrayList<FontStyle>();
+		ArrayList<HashMap<String, Object>> styleSet = get(map(map(properties, "EngineDict"),"StyleRun"), "RunArray");
+		for(HashMap<String, Object> entry : styleSet) {
+			
+			FontStyle style = new FontStyle();
+			Map<String, ?> styleSheet = map(map(entry, "StyleSheet"), "StyleSheetData");
+			
+			style.name = fonts.get(((Double)get(styleSheet, "Font")).intValue());
+			style.size = ((Double) get(styleSheet, "FontSize")).floatValue();
+			
+			ArrayList<Double> clr = get(map(styleSheet, "FillColor"), "Values"); // ARGB encoded
+			style.color = new Color(clr.get(1).floatValue(), clr.get(2).floatValue(), clr.get(3).floatValue(), clr.get(0).floatValue());
+			
+			styles.add(style);
+		}
+		
+	}
+	
+	private static Map<String, ?> map(Map map ,String key){
+		return (Map<String, Map>) map.get(key);
+	}
+	
+	private static <T> T get(Map map ,String key){
+		return (T) map.get(key);
 	}
 
 	/**
@@ -42,6 +88,10 @@ public class PsdTextData extends PsdObject {
 	 */
 	public Map<String, Object> getProperties() {
 		return properties;
+	}
+	
+	public List<FontStyle> getStyles(){
+		return styles;
 	}
 
 	private Map<String, Object> readMap(PsdInputStream stream) throws IOException {

@@ -26,6 +26,17 @@ import psd.util.BufferedImageBuilder;
 
 import java.awt.image.*;
 import java.util.*;
+import java.util.Map.Entry;
+
+import psd.parser.object.PsdTextData;
+
+import psd.parser.object.PsdText;
+import psd.parser.layer.additional.Matrix;
+import psd.parser.layer.additional.Matrix;
+import psd.parser.object.PsdObject;
+import psd.parser.object.PsdDescriptor;
+import psd.parser.object.PsdDescriptor;
+import psd.parser.layer.additional.LayerMetaDataParser;
 
 public class Layer implements LayersContainer {
     private int top = 0;
@@ -46,6 +57,10 @@ public class Layer implements LayersContainer {
     private BlendMode layerBlendMode;
     private BlendingRanges layerBlendingRanges;
     private Mask mask;
+    
+    private PsdText text;
+
+	private PsdTextData textData;
 
     private ArrayList<Layer> layers = new ArrayList<Layer>();
 
@@ -124,6 +139,42 @@ public class Layer implements LayersContainer {
                 name = unicodeName;
             }
         }));
+        
+        parser.putAdditionalInformationParser(LayerMetaDataParser.TAG, new LayerMetaDataParser(new LayerMetaDataHandler() {
+			
+			@Override
+			public void metaDataMlstSectionParsed(PsdDescriptor descriptor) {
+				Map<String, PsdObject> data = descriptor.getObjects();
+				for(Entry<String, PsdObject> entry : data.entrySet()) {
+					System.err.println("PARSED, but ignored: "+entry.getKey() + " :: " + entry.getValue());
+				}
+			}
+		}));
+        
+        parser.putAdditionalInformationParser(LayerTypeToolParser.TAG, new LayerTypeToolParser(new LayerTypeToolHandler() {
+			
+			@Override
+			public void typeToolTransformParsed(Matrix transform) {
+				
+			}
+			
+			@Override
+			public void typeToolDescriptorParsed(int version, PsdDescriptor descriptor) {
+				
+				Map<String, PsdObject> data = descriptor.getObjects();
+				for(Entry<String, PsdObject> entry : data.entrySet()) {
+					PsdObject value = entry.getValue();
+					
+					if(value instanceof PsdText) {
+						text = (PsdText) value;
+					} else if(value instanceof PsdTextData) {
+						textData = (PsdTextData) value;
+					}
+					
+				}
+			}
+		}));
+        
     }
 
     public void addLayer(Layer layer) {
@@ -231,4 +282,12 @@ public class Layer implements LayersContainer {
     public void setMask(Mask mask) {
         this.mask = mask;
     }
+    
+    public PsdText getText() {
+		return text;
+	}
+
+	public PsdTextData getTextData() {
+		return textData;
+	}
 }
